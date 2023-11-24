@@ -68,22 +68,22 @@ class PromptSchedule:
     RETURN_TYPES = ("CONDITIONING", "CONDITIONING",)
     RETURN_NAMES = ("POS", "NEG",)
     FUNCTION = "animate"
-    CATEGORY = "FizzNodes/ScheduleNodes"
+    CATEGORY = "FizzNodes 📅🅕🅝/ScheduleNodes"
 
     def animate(self, text, max_frames, print_output, current_frame, clip, pw_a=0, pw_b=0, pw_c=0, pw_d=0, pre_text='', app_text=''):
         inputText = str("{" + text + "}")
         inputText = re.sub(r',\s*}', '}', inputText)
         animation_prompts = json.loads(inputText.strip())
-
+        start_frame = 0
         pos, neg = batch_split_weighted_subprompts(animation_prompts, pre_text, app_text)
 
-        pos_cur_prompt, pos_nxt_prompt, weight = interpolate_prompt_series(pos, max_frames, pre_text, app_text, pw_a,
+        pos_cur_prompt, pos_nxt_prompt, weight = interpolate_prompt_series(pos, max_frames, start_frame, pre_text, app_text, pw_a,
                                                                            pw_b, pw_c, pw_d, print_output)
-        pc = PoolAnimConditioning(pos_cur_prompt[current_frame], pos_nxt_prompt[current_frame], weight[current_frame], clip, )
+        pc = PoolAnimConditioning(pos_cur_prompt[current_frame], pos_nxt_prompt[current_frame], weight[current_frame], clip)
 
-        neg_cur_prompt, neg_nxt_prompt, weight = interpolate_prompt_series(neg, max_frames, pre_text, app_text, pw_a,
+        neg_cur_prompt, neg_nxt_prompt, weight = interpolate_prompt_series(neg, max_frames, start_frame, pre_text, app_text, pw_a,
                                                                            pw_b, pw_c, pw_d, print_output)
-        nc = PoolAnimConditioning(neg_cur_prompt[current_frame], neg_nxt_prompt[current_frame], weight[current_frame], clip, )
+        nc = PoolAnimConditioning(neg_cur_prompt[current_frame], neg_nxt_prompt[current_frame], weight[current_frame], clip)
 
         return (pc, nc,)
 
@@ -97,6 +97,7 @@ class BatchPromptSchedule:
                 # "forceInput": True}),},
                 "optional": {"pre_text": ("STRING", {"multiline": True, "default": "PRE" }),  # "forceInput": True}),
                              "app_text": ("STRING", {"multiline": True, "default": "APP" }),  # "forceInput": True}),
+                             "start_frame": ("INT", {"default": 0, "min": 0, "max": 9999, "step": 1, }),
                              "pw_a": ("FLOAT", {"default": 0.0, "min": -9999.0, "max": 9999.0, "step": 0.1, }),
                              # "forceInput": True }),
                              "pw_b": ("FLOAT", {"default": 0.0, "min": -9999.0, "max": 9999.0, "step": 0.1, }),
@@ -111,19 +112,19 @@ class BatchPromptSchedule:
     RETURN_NAMES = ("POS", "NEG",)
     FUNCTION = "animate"
 
-    CATEGORY = "FizzNodes/BatchScheduleNodes"
+    CATEGORY = "FizzNodes 📅🅕🅝/BatchScheduleNodes"
 
-    def animate(self, text, max_frames, print_output, clip, pw_a, pw_b, pw_c, pw_d, pre_text='', app_text=''):
+    def animate(self, text, max_frames, print_output, clip, start_frame, pw_a, pw_b, pw_c, pw_d, pre_text='', app_text=''):
         inputText = str("{" + text + "}")
         inputText = re.sub(r',\s*}', '}', inputText)
-
+        max_frames += start_frame
         animation_prompts = json.loads(inputText.strip())
         pos, neg = batch_split_weighted_subprompts(animation_prompts, pre_text, app_text)
 
-        pos_cur_prompt, pos_nxt_prompt, weight = interpolate_prompt_series(pos, max_frames, pre_text, app_text, pw_a, pw_b, pw_c, pw_d, print_output)
-        pc = BatchPoolAnimConditioning( pos_cur_prompt, pos_nxt_prompt, weight, clip, )
+        pos_cur_prompt, pos_nxt_prompt, weight = interpolate_prompt_series(pos, max_frames, start_frame, pre_text, app_text, pw_a, pw_b, pw_c, pw_d, print_output)
+        pc = BatchPoolAnimConditioning( pos_cur_prompt, pos_nxt_prompt, weight, clip,)
 
-        neg_cur_prompt, neg_nxt_prompt, weight = interpolate_prompt_series(neg, max_frames, pre_text, app_text, pw_a, pw_b, pw_c, pw_d, print_output)
+        neg_cur_prompt, neg_nxt_prompt, weight = interpolate_prompt_series(neg, max_frames, start_frame, pre_text, app_text, pw_a, pw_b, pw_c, pw_d, print_output)
         nc = BatchPoolAnimConditioning(neg_cur_prompt, neg_nxt_prompt, weight, clip, )
 
         return (pc, nc, )
@@ -138,6 +139,7 @@ class BatchPromptScheduleLatentInput:
                 # "forceInput": True}),},
                 "optional": {"pre_text": ("STRING", {"multiline": True, "default": "PRE", }),  # "forceInput": True}),
                              "app_text": ("STRING", {"multiline": True, "default": "APP", }),  # "forceInput": True}),
+                             "start_frame": ("INT", {"default": 0.0, "min": 0, "max": 9999, "step": 1, }),
                              "pw_a": ("FLOAT", {"default": 0.0, "min": -9999.0, "max": 9999.0, "step": 0.1, }),
                              # "forceInput": True }),
                              "pw_b": ("FLOAT", {"default": 0.0, "min": -9999.0, "max": 9999.0, "step": 0.1, }),
@@ -152,23 +154,23 @@ class BatchPromptScheduleLatentInput:
     RETURN_NAMES = ("POS", "NEG", "INPUT_LATENTS",)
     FUNCTION = "animate"
 
-    CATEGORY = "FizzNodes/BatchScheduleNodes"
+    CATEGORY = "FizzNodes 📅🅕🅝/BatchScheduleNodes"
 
-    def animate(self, text, num_latents, print_output, clip, pw_a, pw_b, pw_c, pw_d, pre_text='', app_text=''):
+    def animate(self, text, num_latents, print_output, clip, start_frame, pw_a, pw_b, pw_c, pw_d, pre_text='', app_text=''):
         max_frames = sum(tensor.size(0) for tensor in num_latents.values())
-
+        max_frames += start_frame
         inputText = str("{" + text + "}")
         inputText = re.sub(r',\s*}', '}', inputText)
 
         animation_prompts = json.loads(inputText.strip())
         pos, neg = batch_split_weighted_subprompts(animation_prompts, pre_text, app_text)
 
-        pos_cur_prompt, pos_nxt_prompt, weight = interpolate_prompt_series(pos, max_frames, pre_text,
+        pos_cur_prompt, pos_nxt_prompt, weight = interpolate_prompt_series(pos, max_frames, start_frame, pre_text,
                                                                            app_text, pw_a, pw_b, pw_c, pw_d,
                                                                            print_output)
         pc = BatchPoolAnimConditioning(pos_cur_prompt, pos_nxt_prompt, weight, clip, )
 
-        neg_cur_prompt, neg_nxt_prompt, weight = interpolate_prompt_series(neg, max_frames, pre_text,
+        neg_cur_prompt, neg_nxt_prompt, weight = interpolate_prompt_series(neg, max_frames, start_frame, pre_text,
                                                                            app_text, pw_a, pw_b, pw_c, pw_d,
                                                                            print_output)
         nc = BatchPoolAnimConditioning(neg_cur_prompt, neg_nxt_prompt, weight, clip, )
@@ -196,7 +198,7 @@ class StringSchedule:
     RETURN_TYPES = ("STRING",)
     FUNCTION = "animate"
 
-    CATEGORY = "FizzNodes/ScheduleNodes"
+    CATEGORY = "FizzNodes 📅🅕🅝/ScheduleNodes"
 
     def animate(self, text, max_frames, current_frame, pw_a=0, pw_b=0, pw_c=0, pw_d=0, pre_text='', app_text=''):
         inputText = str("{" + text + "}")
@@ -247,13 +249,14 @@ class BatchStringSchedule:
     RETURN_TYPES = ("STRING",)
     FUNCTION = "animate"
 
-    CATEGORY = "FizzNodes/BatchScheduleNodes"
+    CATEGORY = "FizzNodes 📅🅕🅝/BatchScheduleNodes"
 
     def animate(self, text, max_frames, pw_a=0, pw_b=0, pw_c=0, pw_d=0, pre_text='', app_text=''):
         inputText = str("{" + text + "}")
         inputText = re.sub(r',\s*}', '}', inputText)
+        start_frame = 0
         animation_prompts = json.loads(inputText.strip())
-        cur_prompt_series, nxt_prompt_series, weight_series = interpolate_prompt_series(animation_prompts, max_frames, pre_text,
+        cur_prompt_series, nxt_prompt_series, weight_series = interpolate_prompt_series(animation_prompts, max_frames, start_frame, pre_text,
                                                              app_text, pw_a, pw_b, pw_c, pw_d)
         #c = PoolAnimConditioning(cur_prompt, nxt_prompt, weight, clip, )
         return (cur_prompt_series,)
@@ -284,7 +287,7 @@ class BatchPromptScheduleEncodeSDXL:
     RETURN_TYPES = ("CONDITIONING",)
     FUNCTION = "animate"
 
-    CATEGORY = "FizzNodes/BatchScheduleNodes"
+    CATEGORY = "FizzNodes 📅🅕🅝/BatchScheduleNodes"
 
     def animate(self, clip, width, height, crop_w, crop_h, target_width, target_height, text_g, text_l, app_text_G, app_text_L, pre_text_G, pre_text_L, max_frames, print_output, pw_a, pw_b, pw_c, pw_d):
         inputTextG = str("{" + text_g + "}")
@@ -321,7 +324,7 @@ class BatchPromptScheduleEncodeSDXLLatentInput:
     RETURN_TYPES = ("CONDITIONING", "LATENT",)
     FUNCTION = "animate"
 
-    CATEGORY = "FizzNodes/BatchScheduleNodes"
+    CATEGORY = "FizzNodes 📅🅕🅝/BatchScheduleNodes"
 
     def animate(self, clip, width, height, crop_w, crop_h, target_width, target_height, text_g, text_l, app_text_G, app_text_L, pre_text_G, pre_text_L, num_latents, print_output, pw_a, pw_b, pw_c, pw_d):
         max_frames = sum(tensor.size(0) for tensor in num_latents.values())
@@ -346,7 +349,8 @@ class PromptScheduleEncodeSDXL:
             "text_g": ("STRING", {"multiline": True, "default": "CLIP_G"}), "clip": ("CLIP", ),
             "text_l": ("STRING", {"multiline": True, "default": "CLIP_L"}), "clip": ("CLIP", ),
             "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 9999.0, "step": 1.0}),
-            "current_frame": ("INT", {"default": 0.0, "min": 0.0, "max": 9999.0, "step": 1.0})},# "forceInput": True}),},
+            "current_frame": ("INT", {"default": 0.0, "min": 0.0, "max": 9999.0, "step": 1.0}),
+            "print_output":("BOOLEAN", {"default": False})},
             "optional": {"pre_text_G": ("STRING", {"multiline": True, "default": "PRE_G",}),# "forceInput": True}),
             "app_text_G": ("STRING", {"multiline": True, "default": "APP_G",}),# "forceInput": True}),
             "pre_text_L": ("STRING", {"multiline": True, "default": "PRE_L",}),# "forceInput": True}),
@@ -359,16 +363,16 @@ class PromptScheduleEncodeSDXL:
     RETURN_TYPES = ("CONDITIONING",)
     FUNCTION = "animate"
 
-    CATEGORY = "FizzNodes/ScheduleNodes"
+    CATEGORY = "FizzNodes 📅🅕🅝/ScheduleNodes"
 
-    def animate(self, clip, width, height, crop_w, crop_h, target_width, target_height, text_g, text_l, app_text_G, app_text_L, pre_text_G, pre_text_L, max_frames, current_frame, pw_a, pw_b, pw_c, pw_d):
+    def animate(self, clip, width, height, crop_w, crop_h, target_width, target_height, text_g, text_l, app_text_G, app_text_L, pre_text_G, pre_text_L, max_frames, current_frame, print_output, pw_a, pw_b, pw_c, pw_d):
         inputTextG = str("{" + text_g + "}")
         inputTextL = str("{" + text_l + "}")
         inputTextG = re.sub(r',\s*}', '}', inputTextG)
         inputTextL = re.sub(r',\s*}', '}', inputTextL)
         animation_promptsG = json.loads(inputTextG.strip())
         animation_promptsL = json.loads(inputTextL.strip())
-        return (interpolate_prompts_SDXL(animation_promptsG, animation_promptsL, max_frames, current_frame, clip,  app_text_G, app_text_L, pre_text_G, pre_text_L, pw_a, pw_b, pw_c, pw_d, width, height, crop_w, crop_h, target_width, target_height, ),)
+        return (interpolate_prompts_SDXL(animation_promptsG, animation_promptsL, max_frames, current_frame, clip,  app_text_G, app_text_L, pre_text_G, pre_text_L, pw_a, pw_b, pw_c, pw_d, width, height, crop_w, crop_h, target_width, target_height, print_output,),)
 
 # This node schedules the prompt using separate nodes as the keyframes.
 # The values in the prompt are evaluated in NodeFlowEnd.
@@ -382,7 +386,7 @@ class PromptScheduleNodeFlow:
     
     RETURN_TYPES = ("INT","STRING",)
     FUNCTION = "addString"
-    CATEGORY = "FizzNodes/ScheduleNodes"
+    CATEGORY = "FizzNodes 📅🅕🅝/ScheduleNodes"
 
     def addString(self, text, in_text='', max_frames=0, num_frames=0):
         if in_text:
@@ -423,26 +427,26 @@ class PromptScheduleNodeFlowEnd:
     RETURN_NAMES = ("POS", "NEG",)
     FUNCTION = "animate"
 
-    CATEGORY = "FizzNodes/ScheduleNodes"
+    CATEGORY = "FizzNodes 📅🅕🅝/ScheduleNodes"
 
     def animate(self, text, max_frames, print_output, current_frame, clip, pw_a = 0, pw_b = 0, pw_c = 0, pw_d = 0, pre_text = '', app_text = ''):
         if text[-1] == ",":
             text = text[:-1]
         if text[0] == ",":
             text = text[:0]
-
+        start_frame = 0
         inputText = str("{" + text + "}")
         inputText = re.sub(r',\s*}', '}', inputText)
         animation_prompts = json.loads(inputText.strip())
-
+        max_frames += start_frame
         pos, neg = batch_split_weighted_subprompts(animation_prompts, pre_text, app_text)
 
-        pos_cur_prompt, pos_nxt_prompt, weight = interpolate_prompt_series(pos, max_frames, pre_text, app_text, pw_a,
+        pos_cur_prompt, pos_nxt_prompt, weight = interpolate_prompt_series(pos, max_frames, start_frame, pre_text, app_text, pw_a,
                                                                            pw_b, pw_c, pw_d, print_output)
         pc = PoolAnimConditioning(pos_cur_prompt[current_frame], pos_nxt_prompt[current_frame], weight[current_frame],
                                   clip, )
 
-        neg_cur_prompt, neg_nxt_prompt, weight = interpolate_prompt_series(neg, max_frames, pre_text, app_text, pw_a,
+        neg_cur_prompt, neg_nxt_prompt, weight = interpolate_prompt_series(neg, max_frames, start_frame, pre_text, app_text, pw_a,
                                                                            pw_b, pw_c, pw_d, print_output)
         nc = PoolAnimConditioning(neg_cur_prompt[current_frame], neg_nxt_prompt[current_frame], weight[current_frame],
                                   clip, )
@@ -468,9 +472,9 @@ class BatchPromptScheduleNodeFlowEnd:
 
     FUNCTION = "animate"
 
-    CATEGORY = "FizzNodes/BatchScheduleNodes"
+    CATEGORY = "FizzNodes 📅🅕🅝/BatchScheduleNodes"
 
-    def animate(self, text, max_frames, print_output, clip, pw_a=0, pw_b=0, pw_c=0, pw_d=0, pre_text='', current_frame = 0,
+    def animate(self, text, max_frames, start_frame, print_output, clip, pw_a=0, pw_b=0, pw_c=0, pw_d=0, pre_text='', current_frame = 0,
                 app_text=''):
         if text[-1] == ",":
             text = text[:-1]
@@ -480,14 +484,16 @@ class BatchPromptScheduleNodeFlowEnd:
         inputText = re.sub(r',\s*}', '}', inputText)
         animation_prompts = json.loads(inputText.strip())
 
+        max_frames += start_frame
+
         pos, neg = batch_split_weighted_subprompts(animation_prompts, pre_text, app_text)
 
-        pos_cur_prompt, pos_nxt_prompt, weight = interpolate_prompt_series(pos, max_frames, pre_text, app_text, pw_a,
+        pos_cur_prompt, pos_nxt_prompt, weight = interpolate_prompt_series(pos, max_frames, start_frame, pre_text, app_text, pw_a,
                                                                            pw_b, pw_c, pw_d, print_output)
         pc = BatchPoolAnimConditioning(pos_cur_prompt[current_frame], pos_nxt_prompt[current_frame], weight[current_frame],
                                   clip, )
 
-        neg_cur_prompt, neg_nxt_prompt, weight = interpolate_prompt_series(neg, max_frames, pre_text, app_text, pw_a,
+        neg_cur_prompt, neg_nxt_prompt, weight = interpolate_prompt_series(neg, max_frames, start_frame, pre_text, app_text, pw_a,
                                                                            pw_b, pw_c, pw_d, print_output)
         nc = BatchPoolAnimConditioning(neg_cur_prompt[current_frame], neg_nxt_prompt[current_frame], weight[current_frame],
                                   clip, )
@@ -523,7 +529,7 @@ class BatchGLIGENSchedule:
     RETURN_TYPES = ("CONDITIONING",)
     FUNCTION = "animate"
 
-    CATEGORY = "FizzNodes/BatchScheduleNodes"
+    CATEGORY = "FizzNodes 📅🅕🅝/BatchScheduleNodes"
 
     def animate(self, conditioning_to, clip, gligen_textbox_model, text, width, height, x, y, max_frames, print_output, pw_a, pw_b, pw_c, pw_d, pre_text='', app_text=''):
         inputText = str("{" + text + "}")
@@ -573,7 +579,7 @@ class ValueSchedule:
     RETURN_TYPES = ("FLOAT", "INT")
     FUNCTION = "animate"
 
-    CATEGORY = "FizzNodes/ScheduleNodes"
+    CATEGORY = "FizzNodes 📅🅕🅝/ScheduleNodes"
     
     def animate(self, text, max_frames, current_frame,):
         t = get_inbetweens(parse_key_frames(text, max_frames), max_frames)
@@ -590,7 +596,7 @@ class BatchValueSchedule:
     RETURN_TYPES = ("FLOAT", "INT")
     FUNCTION = "animate"
 
-    CATEGORY = "FizzNodes/BatchScheduleNodes"
+    CATEGORY = "FizzNodes 📅🅕🅝/BatchScheduleNodes"
 
     def animate(self, text, max_frames, ):
         t = batch_get_inbetweens(batch_parse_key_frames(text, max_frames), max_frames)
@@ -606,7 +612,7 @@ class BatchValueScheduleLatentInput:
     RETURN_TYPES = ("FLOAT", "INT", "LATENT", )
     FUNCTION = "animate"
 
-    CATEGORY = "FizzNodes/BatchScheduleNodes"
+    CATEGORY = "FizzNodes 📅🅕🅝/BatchScheduleNodes"
 
     def animate(self, text, num_latents, ):
         num_elements = sum(tensor.size(0) for tensor in num_latents.values())

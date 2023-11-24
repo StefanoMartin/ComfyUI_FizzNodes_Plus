@@ -61,6 +61,7 @@ from .ScheduledNodes import (
     #, BatchPromptScheduleNodeFlowEnd #, BatchGLIGENSchedule
 )
 from .FrameNodes import FrameConcatenate, InitNodeFrame, NodeFrame, StringConcatenate
+from .HelperNodes import ConcatStringSingle, convertKeyframeKeysToBatchKeys, CalculateFrameOffset
 
 NODE_CLASS_MAPPINGS = {
     "Lerp": Lerp,
@@ -93,15 +94,44 @@ NODE_CLASS_MAPPINGS = {
     "Init FizzFrame":InitNodeFrame,
     "FizzFrame":NodeFrame,
     "FizzFrameConcatenate":FrameConcatenate,
+
+    "ConcatStringSingle": ConcatStringSingle,
+    "convertKeyframeKeysToBatchKeys": convertKeyframeKeysToBatchKeys,
+    "CalculateFrameOffset":CalculateFrameOffset,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
+    "Lerp": "Lerp 📅🅕🅝",
+    "SinWave": "SinWave 📅🅕🅝",
+    "InvSinWave": "InvSinWave 📅🅕🅝",
+    "CosWave": "CosWave 📅🅕🅝",
+    "InvCosWave": "InvCosWave 📅🅕🅝",
+    "SquareWave":"SquareWave 📅🅕🅝",
+    "SawtoothWave": "SawtoothWave 📅🅕🅝",
+    "TriangleWave": "TriangleWave 📅🅕🅝",
+    "AbsCosWave": "AbsCosWave 📅🅕🅝",
+    "AbsSinWave": "AbsSinWave 📅🅕🅝",
+    "PromptSchedule": "Prompt Schedule 📅🅕🅝",
+    "ValueSchedule": "Value Schedule 📅🅕🅝",
+    "PromptScheduleNodeFlow": "Prompt Schedule NodeFlow 📅🅕🅝",
+    "PromptScheduleNodeFlowEnd": "Prompt Schedule NodeFlow End 📅🅕🅝",
+    "StringSchedule":"String Schedule 📅🅕🅝",
+    "StringConcatenate":"String Concatenate 📅🅕🅝",
+    "Init FizzFrame":"Init Node Frame 📅🅕🅝",
+    "FizzFrame":"Node Frame 📅🅕🅝",
+    "FizzFrameConcatenate":"Frame Concatenate 📅🅕🅝",
+    "BatchPromptSchedule": "Batch Prompt Schedule 📅🅕🅝",
+    "BatchValueSchedule": "Batch Value Schedule 📅🅕🅝",
+    "PromptScheduleEncodeSDXL": "Prompt Schedule SDXL 📅🅕🅝",
+    "BatchPromptScheduleEncodeSDXL": "Batch Prompt Schedule SDXL 📅🅕🅝",
+    "BatchStringSchedule": "Batch String Schedule 📅🅕🅝",
+    "BatchValueScheduleLatentInput": "Batch Value Schedule (Latent Input) 📅🅕🅝",
+    "BatchPromptScheduleSDXLLatentInput": "Batch Prompt Schedule SDXL (Latent Input) 📅🅕🅝",
+    "BatchPromptScheduleLatentInput": "Batch Prompt Schedule (Latent Input) 📅🅕🅝",
+    "ConcatStringSingle": "Concat String (Single) 📅🅕🅝",
+    "convertKeyframeKeysToBatchKeys":"Keyframe Keys To Batch Keys 📅🅕🅝",
+    "SelectFrameNumber":"Select Frame Number 📅🅕🅝",
+    "CalculateFrameOffset":"Calculate Frame Offset 📅🅕🅝",
 
-    "PromptScheduleEncodeSDXL": "PromptScheduleSDXL",
-    "BatchPromptScheduleEncodeSDXL": "BatchPromptScheduleSDXL",
-    "BatchStringSchedule": "BatchStringSchedule",
-    "BatchValueScheduleLatentInput": "BatchValueSchedule(LatentInput)",
-    "BatchPromptScheduleSDXLLatentInput": "BatchPromptScheduleSDXL(LatentInput)",
-    "BatchPromptScheduleLatentInput": "BatchPromptSchedule(LatentInput)",
 }
 print('\033[34mFizzleDorf Custom Nodes: \033[92mLoaded\033[0m')

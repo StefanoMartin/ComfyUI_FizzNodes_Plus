@@ -62,7 +62,7 @@ def batch_split_weighted_subprompts(text, pre_text, app_text):
             neg[frame] = neg[frame][:-1]
     return pos, neg
 
-def interpolate_prompt_series(animation_prompts, max_frames, pre_text, app_text, prompt_weight_1=[],
+def interpolate_prompt_series(animation_prompts, max_frames, start_frame, pre_text, app_text, prompt_weight_1=[],
                               prompt_weight_2=[], prompt_weight_3=[], prompt_weight_4=[], Is_print = False):
 
     max_f = max_frames  # needed for numexpr even though it doesn't look like it's in use.
@@ -75,6 +75,13 @@ def interpolate_prompt_series(animation_prompts, max_frames, pre_text, app_text,
 
     sorted_prompts = sorted(parsed_animation_prompts.items(), key=lambda item: int(item[0]))
 
+    # Automatically set the first keyframe to 0 if it's missing
+    if sorted_prompts[0][0] != "0":
+        sorted_prompts.insert(0, ("0", sorted_prompts[0][1]))
+
+    # Automatically set the last keyframe to the maximum number of frames
+    if sorted_prompts[-1][0] != str(max_frames):
+        sorted_prompts.append((str(max_frames), sorted_prompts[-1][1]))
     # Setup containers for interpolated prompts
     cur_prompt_series = pd.Series([np.nan for a in range(max_frames)])
     nxt_prompt_series = pd.Series([np.nan for a in range(max_frames)])
@@ -129,40 +136,46 @@ def interpolate_prompt_series(animation_prompts, max_frames, pre_text, app_text,
         current_key = next_key
         next_key = max_frames
         current_weight = 0.0
-        # second loop to catch any nan runoff
-        for f in range(current_key, next_key):
-            next_weight = weight_step * (f - current_key)
 
-            # add the appropriate prompts and weights to their respective containers.
-            cur_prompt_series[f] = ''
-            nxt_prompt_series[f] = ''
-            weight_series[f] = current_weight
-            cur_prompt_series[f] = str(current_prompt)
-            nxt_prompt_series[f] = str(next_prompt)
+        ## second loop to catch any nan runoff
+        #for f in range(current_key, next_key):
+        #    next_weight = weight_step * (f - current_key)
+#
+        #    # add the appropriate prompts and weights to their respective containers.
+        #    cur_prompt_series[f] = ''
+        #    nxt_prompt_series[f] = ''
+        #    weight_series[f] = current_weight
+        #    cur_prompt_series[f] = str(current_prompt)
+        #    nxt_prompt_series[f] = str(next_prompt)
 
-    if isinstance(prompt_weight_1, int):
+    if type(prompt_weight_1) in {int, float}:
         prompt_weight_1 = tuple([prompt_weight_1] * max_frames)
 
-    if isinstance(prompt_weight_2, int):
+    if type(prompt_weight_2) in {int, float}:
         prompt_weight_2 = tuple([prompt_weight_2] * max_frames)
 
-    if isinstance(prompt_weight_3, int):
+    if type(prompt_weight_3) in {int, float}:
         prompt_weight_3 = tuple([prompt_weight_3] * max_frames)
 
-    if isinstance(prompt_weight_4, int):
+    if type(prompt_weight_4) in {int, float}:
         prompt_weight_4 = tuple([prompt_weight_4] * max_frames)
 
+    index_offset = 0
     # Evaluate the current and next prompt's expressions
-    for i in range(0,len(cur_prompt_series)):
-        cur_prompt_series[i] = prepare_batch_prompt(cur_prompt_series[i], max_frames, i, prompt_weight_1[i],
-                                                    prompt_weight_2[i], prompt_weight_3[i], prompt_weight_4[i])
-        nxt_prompt_series[i] = prepare_batch_prompt(nxt_prompt_series[i], max_frames, i, prompt_weight_1[i],
-                                                    prompt_weight_2[i], prompt_weight_3[i], prompt_weight_4[i])
 
-    if Is_print == True:
-        # Show the to/from prompts with evaluated expressions for transparency.
-        for i in range(len(cur_prompt_series)):
-            print("\n", "Max Frames: ", max_frames, "\n", "Current Prompt: ", cur_prompt_series[i], "\n", "Next Prompt: ", nxt_prompt_series[i], "\n", "Strength : ", weight_series[i], "\n")
+    for i in range(start_frame,len(cur_prompt_series)):
+        cur_prompt_series[index_offset] = prepare_batch_prompt(cur_prompt_series[i], max_frames, i, prompt_weight_1[i],
+                                                    prompt_weight_2[i], prompt_weight_3[i], prompt_weight_4[i])
+        nxt_prompt_series[index_offset] = prepare_batch_prompt(nxt_prompt_series[i], max_frames, i, prompt_weight_1[i],
+                                                    prompt_weight_2[i], prompt_weight_3[i], prompt_weight_4[i])
+        if Is_print == True:
+            # Show the to/from prompts with evaluated expressions for transparency.
+            print("\n", "Max Frames: ", max_frames, "\n", "frame index: ", (start_frame+index_offset), "\n", "Current Prompt: ",
+                  cur_prompt_series[index_offset], "\n", "Next Prompt: ", nxt_prompt_series[index_offset], "\n", "Strength : ",
+                  weight_series[i], "\n")
+        index_offset = index_offset+1
+
+
 
     # Output methods depending if the prompts are the same or if the current frame is a keyframe.
     # if it is an in-between frame and the prompts differ, composable diffusion will be performed.
@@ -178,6 +191,17 @@ def BatchPoolAnimConditioning(cur_prompt_series, nxt_prompt_series, weight_serie
 
         tokens = clip.tokenize(str(nxt_prompt_series[i]))
         cond_from, pooled_from = clip.encode_from_tokens(tokens, return_pooled=True)
+        if i < len(cur_prompt_series):
+            tokens = clip.tokenize(str(cur_prompt_series[i]))
+            cond_to, pooled_to = clip.encode_from_tokens(tokens, return_pooled=True)
+        else:
+            cond_to, pooled_to = torch.zeros_like(cond_from), torch.zeros_like(pooled_from)
+
+        if i < len(nxt_prompt_series):
+            tokens = clip.tokenize(str(nxt_prompt_series[i]))
+            cond_from, pooled_from = clip.encode_from_tokens(tokens, return_pooled=True)
+        else:
+            cond_from, pooled_from = torch.zeros_like(cond_to), torch.zeros_like(pooled_to)
 
         interpolated_conditioning = addWeighted([[cond_to, {"pooled_output": pooled_to}]],
                                                 [[cond_from, {"pooled_output": pooled_from}]],
