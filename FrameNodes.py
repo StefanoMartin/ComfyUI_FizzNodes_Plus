@@ -79,11 +79,12 @@ class InitNodeFrame:
         }
 
         if previous_frame:
-            prev_frame = previous_frame.thisFrame
+            prev_frame = previous_frame.thisFrame.copy()
             new_frame["general_positive"] = prev_frame["general_positive"]
             new_frame["general_negative"] = prev_frame["general_negative"]
             new_frame["clip"] = prev_frame["clip"]
-            self.frames = previous_frame.frames
+            self.frames = previous_frame.frames.copy()
+
 
         if general_positive:
             new_frame["general_positive"] = general_positive
@@ -134,8 +135,8 @@ class NodeFrame:
     CATEGORY = "FizzNodes/FrameNodes"
 
     def create_frame(self, frame, previous_frame, positive_text, negative_text=None):
-        self.frames = previous_frame.frames
-        prev_frame = previous_frame.thisFrame
+        self.frames = previous_frame.frames.copy()
+        prev_frame = previous_frame.thisFrame.copy()
         
         new_positive_text = f"{positive_text}, {prev_frame['general_positive']}"
         new_negative_text = f"{negative_text}, {prev_frame['general_negative']}"
@@ -180,16 +181,20 @@ class FrameConcatenate:
         text_list = ""
         for frame_digit in frame.frames:
             new_frame = frame.frames[frame_digit]
-            text_list += f'"{frame_digit}": "{new_frame["positive_text"]}'
+            new_frame_list = f'"{frame_digit}": "{new_frame["positive_text"]}'
             if new_frame.get("general_positive"):
-                text_list += f', {new_frame["general_positive"]}'
+                new_frame_list += f', {new_frame["general_positive"]}'
             if new_frame.get("negative_text") or new_frame.get("general_negative"):
-                text_list += f', --neg '
+                new_frame_list += f', --neg '
                 if new_frame.get("negative_text"):
-                    text_list += f', {new_frame["negative_text"]}'
+                    new_frame_list += f'{new_frame["negative_text"]}, '
                 if new_frame.get("general_negative"):
-                    text_list += f', {new_frame["general_negative"]}'
-            text_list += f'",\n'
+                    new_frame_list += f'{new_frame["general_negative"]}, '
+            new_frame_list = new_frame_list.replace("\n", ", ")
+            if new_frame_list[-2] == ",":
+                new_frame_list = new_frame_list[:-2]
+            new_frame_list += f'",\n'
+            text_list += new_frame_list
         text_list = text_list[:-2]
 
         return (text_list,)
