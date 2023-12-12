@@ -137,16 +137,6 @@ def interpolate_prompt_series(animation_prompts, max_frames, start_frame, pre_te
         next_key = max_frames
         current_weight = 0.0
 
-        ## second loop to catch any nan runoff
-        #for f in range(current_key, next_key):
-        #    next_weight = weight_step * (f - current_key)
-#
-        #    # add the appropriate prompts and weights to their respective containers.
-        #    cur_prompt_series[f] = ''
-        #    nxt_prompt_series[f] = ''
-        #    weight_series[f] = current_weight
-        #    cur_prompt_series[f] = str(current_prompt)
-        #    nxt_prompt_series[f] = str(next_prompt)
 
     if type(prompt_weight_1) in {int, float}:
         prompt_weight_1 = tuple([prompt_weight_1] * max_frames)
@@ -164,14 +154,14 @@ def interpolate_prompt_series(animation_prompts, max_frames, start_frame, pre_te
     # Evaluate the current and next prompt's expressions
 
     for i in range(start_frame,len(cur_prompt_series)):
-        cur_prompt_series[index_offset] = prepare_batch_prompt(cur_prompt_series[i], max_frames, i, prompt_weight_1[i],
+        cur_prompt_series[i] = prepare_batch_prompt(cur_prompt_series[i], max_frames, i, prompt_weight_1[i],
                                                     prompt_weight_2[i], prompt_weight_3[i], prompt_weight_4[i])
-        nxt_prompt_series[index_offset] = prepare_batch_prompt(nxt_prompt_series[i], max_frames, i, prompt_weight_1[i],
+        nxt_prompt_series[i] = prepare_batch_prompt(nxt_prompt_series[i], max_frames, i, prompt_weight_1[i],
                                                     prompt_weight_2[i], prompt_weight_3[i], prompt_weight_4[i])
         if Is_print == True:
             # Show the to/from prompts with evaluated expressions for transparency.
-            print("\n", "Max Frames: ", max_frames, "\n", "frame index: ", (start_frame+index_offset), "\n", "Current Prompt: ",
-                  cur_prompt_series[index_offset], "\n", "Next Prompt: ", nxt_prompt_series[index_offset], "\n", "Strength : ",
+            print("\n", "Max Frames: ", max_frames, "\n", "frame index: ", (start_frame+i), "\n", "Current Prompt: ",
+                  cur_prompt_series[i], "\n", "Next Prompt: ", nxt_prompt_series[i], "\n", "Strength : ",
                   weight_series[i], "\n")
         index_offset = index_offset+1
 
@@ -185,23 +175,24 @@ def BatchPoolAnimConditioning(cur_prompt_series, nxt_prompt_series, weight_serie
     pooled_out = []
     cond_out = []
 
+
+    def pad_with_clip_tokens(tensor, target_length):
+        pad_token = clip.cond_stage_model.clip_l.special_tokens['pad']
+        tokens_to_pad = clip.tokenize(pad_token)
+        tokens_to_pad = tokens_to_pad.unsqueeze(0).expand(1, target_length, tokens_to_pad.shape[2])
+        tokens_to_pad = tokens_to_pad.to(tensor.device)
+        return torch.cat([tensor, tokens_to_pad], dim=1)
+
     for i in range(len(cur_prompt_series)):
         tokens = clip.tokenize(str(cur_prompt_series[i]))
         cond_to, pooled_to = clip.encode_from_tokens(tokens, return_pooled=True)
-
-        tokens = clip.tokenize(str(nxt_prompt_series[i]))
-        cond_from, pooled_from = clip.encode_from_tokens(tokens, return_pooled=True)
-        if i < len(cur_prompt_series):
-            tokens = clip.tokenize(str(cur_prompt_series[i]))
-            cond_to, pooled_to = clip.encode_from_tokens(tokens, return_pooled=True)
-        else:
-            cond_to, pooled_to = torch.zeros_like(cond_from), torch.zeros_like(pooled_from)
 
         if i < len(nxt_prompt_series):
             tokens = clip.tokenize(str(nxt_prompt_series[i]))
             cond_from, pooled_from = clip.encode_from_tokens(tokens, return_pooled=True)
         else:
             cond_from, pooled_from = torch.zeros_like(cond_to), torch.zeros_like(pooled_to)
+            pooled_from = pad_with_clip_tokens(pooled_from, cond_to.shape[1])
 
         interpolated_conditioning = addWeighted([[cond_to, {"pooled_output": pooled_to}]],
                                                 [[cond_from, {"pooled_output": pooled_from}]],
@@ -213,11 +204,11 @@ def BatchPoolAnimConditioning(cur_prompt_series, nxt_prompt_series, weight_serie
         pooled_out.append(interpolated_pooled)
         cond_out.append(interpolated_cond)
 
-
     final_pooled_output = torch.cat(pooled_out, dim=0)
     final_conditioning = torch.cat(cond_out, dim=0)
 
     return [[final_conditioning, {"pooled_output": final_pooled_output}]]
+
 
 
 def BatchGLIGENConditioning(cur_prompt_series, nxt_prompt_series, weight_series, clip):
@@ -450,22 +441,3 @@ def BatchInterpolatePromptsSDXL(animation_promptsG, animation_promptsL, max_fram
                   "\n", "Next Prompt L : ", nxt_prompt_series_L[i],  "\n"), "\n", "Current weight: ", weight_series[i]
 
     return BatchPoolAnimConditioningSDXL(current_conds, next_conds, weight_series, clip)
-
-
-
-#    if str(cur_prompt_series_G[current_frame]) == str(nxt_prompt_series_G[current_frame]) and str(
-#            cur_prompt_series_L[current_frame]) == str(nxt_prompt_series_L[current_frame]):
-#        return current_cond
-#
-#    if weight_series[current_frame] == 1:
-#        return current_cond
-#
-#    if weight_series[current_frame] == 0:
-#        next_cond = SDXLencode(clip, width, height, crop_w, crop_h, target_width, target_height,
-#                               cur_prompt_series_G[current_frame], cur_prompt_series_L[current_frame])
-#        return next_cond
-#
-#    else:
-#        next_cond = SDXLencode(clip, width, height, crop_w, crop_h, target_width, target_height,
-#                               cur_prompt_series_G[current_frame], cur_prompt_series_L[current_frame])
-#        return addWeighted(current_cond, next_cond, weight_series[current_frame])

@@ -54,8 +54,8 @@ class PromptSchedule:
     def INPUT_TYPES(s):
         return {"required": {"text": ("STRING", {"multiline": True, "default":defaultPrompt}),
             "clip": ("CLIP", ),
-            "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 9999.0, "step": 1.0}),
-            "current_frame": ("INT", {"default": 0.0, "min": 0.0, "max": 9999.0, "step": 1.0,}),
+            "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 999999.0, "step": 1.0}),
+            "current_frame": ("INT", {"default": 0.0, "min": 0.0, "max": 999999.0, "step": 1.0,}),
             "print_output":("BOOLEAN", {"default": False}),},# "forceInput": True}),},
                 "optional": {"pre_text": ("STRING", {"multiline": True,}),# "forceInput": True}),
             "app_text": ("STRING", {"multiline": True,}),# "forceInput": True}),
@@ -71,6 +71,7 @@ class PromptSchedule:
     CATEGORY = "FizzNodes 📅🅕🅝/ScheduleNodes"
 
     def animate(self, text, max_frames, print_output, current_frame, clip, pw_a=0, pw_b=0, pw_c=0, pw_d=0, pre_text='', app_text=''):
+        current_frame = current_frame % max_frames
         inputText = str("{" + text + "}")
         inputText = re.sub(r',\s*}', '}', inputText)
         animation_prompts = json.loads(inputText.strip())
@@ -92,7 +93,7 @@ class BatchPromptSchedule:
     def INPUT_TYPES(s):
         return {"required": {"text": ("STRING", {"multiline": True, "default": defaultPrompt}),
                              "clip": ("CLIP",),
-                             "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 9999.0, "step": 1.0}),
+                             "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 999999.0, "step": 1.0}),
                              "print_output":("BOOLEAN", {"default": False}),},
                 # "forceInput": True}),},
                 "optional": {"pre_text": ("STRING", {"multiline": True, "default": "PRE" }),  # "forceInput": True}),
@@ -180,8 +181,8 @@ class StringSchedule:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {"text": ("STRING", {"multiline": True, "default": defaultPrompt}),
-                             "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 9999.0, "step": 1.0}),
-                             "current_frame": ("INT", {"default": 0.0, "min": 0.0, "max": 9999.0, "step": 1.0, })},
+                             "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 999999.0, "step": 1.0}),
+                             "current_frame": ("INT", {"default": 0.0, "min": 0.0, "max": 999999.0, "step": 1.0, })},
                 # "forceInput": True}),},
                 "optional": {"pre_text": ("STRING", {"multiline": True, "default": "PRE",  }),  # "forceInput": True}),
                              "app_text": ("STRING", {"multiline": True, "default": "APP", }),  # "forceInput": True}),
@@ -201,6 +202,7 @@ class StringSchedule:
     CATEGORY = "FizzNodes 📅🅕🅝/ScheduleNodes"
 
     def animate(self, text, max_frames, current_frame, pw_a=0, pw_b=0, pw_c=0, pw_d=0, pre_text='', app_text=''):
+        current_frame = current_frame % max_frames
         inputText = str("{" + text + "}")
         inputText = re.sub(r',\s*}', '}', inputText)
         animation_prompts = json.loads(inputText.strip())
@@ -232,7 +234,7 @@ class BatchStringSchedule:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {"text": ("STRING", {"multiline": True, "default": defaultPrompt}),
-                             "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 9999.0, "step": 1.0}),},
+                             "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 999999.0, "step": 1.0}),},
                 # "forceInput": True}),},
                 "optional": {"pre_text": ("STRING", {"multiline": True, "default": "PRE", }),  # "forceInput": True}),
                              "app_text": ("STRING", {"multiline": True, "default": "APP", }),  # "forceInput": True}),
@@ -258,7 +260,6 @@ class BatchStringSchedule:
         animation_prompts = json.loads(inputText.strip())
         cur_prompt_series, nxt_prompt_series, weight_series = interpolate_prompt_series(animation_prompts, max_frames, start_frame, pre_text,
                                                              app_text, pw_a, pw_b, pw_c, pw_d)
-        #c = PoolAnimConditioning(cur_prompt, nxt_prompt, weight, clip, )
         return (cur_prompt_series,)
 
 class BatchPromptScheduleEncodeSDXL:
@@ -273,7 +274,7 @@ class BatchPromptScheduleEncodeSDXL:
             "target_height": ("INT", {"default": 1024.0, "min": 0, "max": MAX_RESOLUTION}),
             "text_g": ("STRING", {"multiline": True, "default": "CLIP_G"}), "clip": ("CLIP", ),
             "text_l": ("STRING", {"multiline": True, "default": "CLIP_L"}), "clip": ("CLIP", ),
-            "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 9999.0, "step": 1.0}),
+            "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 999999.0, "step": 1.0}),
             "print_output":("BOOLEAN", {"default": False}),},
             "optional": {"pre_text_G": ("STRING", {"multiline": True, "default": "PRE_G"}),# "forceInput": True}),
             "app_text_G": ("STRING", {"multiline": True, "default": "APP_G"}),# "forceInput": True}),
@@ -348,8 +349,8 @@ class PromptScheduleEncodeSDXL:
             "target_height": ("INT", {"default": 1024.0, "min": 0, "max": MAX_RESOLUTION}),
             "text_g": ("STRING", {"multiline": True, "default": "CLIP_G"}), "clip": ("CLIP", ),
             "text_l": ("STRING", {"multiline": True, "default": "CLIP_L"}), "clip": ("CLIP", ),
-            "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 9999.0, "step": 1.0}),
-            "current_frame": ("INT", {"default": 0.0, "min": 0.0, "max": 9999.0, "step": 1.0}),
+            "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 999999.0, "step": 1.0}),
+            "current_frame": ("INT", {"default": 0.0, "min": 0.0, "max": 999999.0, "step": 1.0}),
             "print_output":("BOOLEAN", {"default": False})},
             "optional": {"pre_text_G": ("STRING", {"multiline": True, "default": "PRE_G",}),# "forceInput": True}),
             "app_text_G": ("STRING", {"multiline": True, "default": "APP_G",}),# "forceInput": True}),
@@ -366,6 +367,7 @@ class PromptScheduleEncodeSDXL:
     CATEGORY = "FizzNodes 📅🅕🅝/ScheduleNodes"
 
     def animate(self, clip, width, height, crop_w, crop_h, target_width, target_height, text_g, text_l, app_text_G, app_text_L, pre_text_G, pre_text_L, max_frames, current_frame, print_output, pw_a, pw_b, pw_c, pw_d):
+        current_frame = current_frame % max_frames
         inputTextG = str("{" + text_g + "}")
         inputTextL = str("{" + text_l + "}")
         inputTextG = re.sub(r',\s*}', '}', inputTextG)
@@ -382,7 +384,7 @@ class PromptScheduleNodeFlow:
         return {"required": {"text": ("STRING", {"multiline": True}),                           
                             "num_frames": ("INT", {"default": 24.0, "min": 0.0, "max": 9999.0, "step": 1.0}),},
                "optional":  {"in_text": ("STRING", {"multiline": False, }), # "forceInput": True}),
-                             "max_frames": ("INT", {"default": 0.0, "min": 0.0, "max": 9999.0, "step": 1.0,})}} # "forceInput": True}),}}
+                             "max_frames": ("INT", {"default": 0.0, "min": 0.0, "max": 999999.0, "step": 1.0,})}} # "forceInput": True}),}}
     
     RETURN_TYPES = ("INT","STRING",)
     FUNCTION = "addString"
@@ -413,9 +415,9 @@ class PromptScheduleNodeFlowEnd:
     def INPUT_TYPES(s):
         return {"required": {"text": ("STRING", {"multiline": False, "forceInput": True}), 
                             "clip": ("CLIP", ),
-                            "max_frames": ("INT", {"default": 0.0, "min": 0.0, "max": 9999.0, "step": 1.0,}),
+                            "max_frames": ("INT", {"default": 0.0, "min": 0.0, "max": 999999.0, "step": 1.0,}),
                             "print_output": ("BOOLEAN", {"default": False}),
-                            "current_frame": ("INT", {"default": 0.0, "min": 0.0, "max": 9999.0, "step": 1.0,}),}, #"forceInput": True}),},
+                            "current_frame": ("INT", {"default": 0.0, "min": 0.0, "max": 999999.0, "step": 1.0,}),}, #"forceInput": True}),},
                "optional": {"pre_text": ("STRING", {"multiline": True, "default": "PRE", }),#"forceInput": True}),
                             "app_text": ("STRING", {"multiline": True, "default": "APP", }),#"forceInput": True}),
                             "pw_a": ("FLOAT", {"default": 0.0, "min": -9999.0, "max": 9999.0, "step": 0.1,}),# "forceInput": True}),
@@ -430,6 +432,7 @@ class PromptScheduleNodeFlowEnd:
     CATEGORY = "FizzNodes 📅🅕🅝/ScheduleNodes"
 
     def animate(self, text, max_frames, print_output, current_frame, clip, pw_a = 0, pw_b = 0, pw_c = 0, pw_d = 0, pre_text = '', app_text = ''):
+        current_frame = current_frame % max_frames
         if text[-1] == ",":
             text = text[:-1]
         if text[0] == ",":
@@ -458,7 +461,7 @@ class BatchPromptScheduleNodeFlowEnd:
     def INPUT_TYPES(s):
         return {"required": {"text": ("STRING", {"multiline": False, "forceInput": True}),
                             "clip": ("CLIP", ),
-                            "max_frames": ("INT", {"default": 0.0, "min": 0.0, "max": 9999.0, "step": 1.0,}),
+                            "max_frames": ("INT", {"default": 0.0, "min": 0.0, "max": 999999.0, "step": 1.0,}),
                             "print_output": ("BOOLEAN", {"default": False}),
                             },
                "optional": {"pre_text": ("STRING", {"multiline": False, }),#"forceInput": True}),
@@ -511,7 +514,7 @@ class BatchGLIGENSchedule:
                              "height": ("INT", {"default": 64, "min": 8, "max": MAX_RESOLUTION, "step": 8}),
                              "x": ("INT", {"default": 0, "min": 0, "max": MAX_RESOLUTION, "step": 8}),
                              "y": ("INT", {"default": 0, "min": 0, "max": MAX_RESOLUTION, "step": 8}),
-                             "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 9999.0, "step": 1.0}),
+                             "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 999999.0, "step": 1.0}),
                              "print_output":("BOOLEAN", {"default": False})},
                 # "forceInput": True}),},
                 "optional": {"pre_text": ("STRING", {"multiline": True, "default": "PRE", }),  # "forceInput": True}),
@@ -573,8 +576,8 @@ class ValueSchedule:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {"text": ("STRING", {"multiline": True, "default":defaultValue}),
-                             "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 9999.0, "step": 1.0}),
-                             "current_frame": ("INT", {"default": 0.0, "min": 0.0, "max": 9999.0, "step": 1.0,}),# "forceInput": True}),
+                             "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 999999.0, "step": 1.0}),
+                             "current_frame": ("INT", {"default": 0.0, "min": 0.0, "max": 999999.0, "step": 1.0,}),# "forceInput": True}),
                              }}
     RETURN_TYPES = ("FLOAT", "INT")
     FUNCTION = "animate"
@@ -582,6 +585,7 @@ class ValueSchedule:
     CATEGORY = "FizzNodes 📅🅕🅝/ScheduleNodes"
     
     def animate(self, text, max_frames, current_frame,):
+        current_frame = current_frame % max_frames
         t = get_inbetweens(parse_key_frames(text, max_frames), max_frames)
         cFrame = current_frame
         return (t[cFrame],int(t[cFrame]),)
@@ -590,7 +594,7 @@ class BatchValueSchedule:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {"text": ("STRING", {"multiline": True, "default": defaultValue}),
-                             "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 9999.0, "step": 1.0}),
+                             "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 999999.0, "step": 1.0}),
                              }}
 
     RETURN_TYPES = ("FLOAT", "INT")
